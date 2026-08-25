@@ -37,7 +37,7 @@ function App() {
 
     try {
       // Busca produtos
-      const prodRes = await fetch('http://localhost:3001/api/products', {
+      const prodRes = await fetch('/api/products', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (prodRes.ok) {
@@ -63,7 +63,7 @@ function App() {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      const res = await fetch('http://localhost:3001/api/transactions', {
+      const res = await fetch('/api/transactions', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -86,7 +86,7 @@ function App() {
     e.preventDefault();
     setError('');
     try {
-      const response = await fetch('http://localhost:3001/api/login', {
+      const response = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
@@ -135,7 +135,7 @@ function App() {
     }
 
     const token = localStorage.getItem('token');
-    fetch('http://localhost:3001/api/checkout', {
+    fetch('/api/checkout', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
