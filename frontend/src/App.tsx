@@ -8,6 +8,45 @@ type CartItem = Product & { quantity: number };
 type Team = { id: number, name: string, balance: number };
 type Transaction = { id: number, seller: string, team: string, buyerName: string, buyerPhone: string, total: number, date: string, cart: CartItem[] };
 
+// Gerador de Payload PIX (BR Code)
+function generatePixPayload(pixKey: string, amount: number, merchantName = 'Retiro', merchantCity = 'Cidade') {
+  const amountStr = amount.toFixed(2);
+  const payloadFormat = '000201';
+  
+  const gui = '0014br.gov.bcb.pix';
+  const key = \`01\${pixKey.length.toString().padStart(2, '0')}\${pixKey}\`;
+  const merchantAccountInfo = \`26\${(gui.length + key.length).toString().padStart(2, '0')}\${gui}\${key}\`;
+  
+  const mcc = '52040000';
+  const currency = '5303986';
+  const amountField = \`54\${amountStr.length.toString().padStart(2, '0')}\${amountStr}\`;
+  const country = '5802BR';
+  
+  merchantName = merchantName.substring(0, 25).replace(/[^a-zA-Z0-9 ]/g, '');
+  merchantCity = merchantCity.substring(0, 15).replace(/[^a-zA-Z0-9 ]/g, '');
+  
+  const nameField = \`59\${merchantName.length.toString().padStart(2, '0')}\${merchantName}\`;
+  const cityField = \`60\${merchantCity.length.toString().padStart(2, '0')}\${merchantCity}\`;
+  
+  const txid = '0503***';
+  const additionalData = \`62\${txid.length.toString().padStart(2, '0')}\${txid}\`;
+  
+  let payload = payloadFormat + merchantAccountInfo + mcc + currency + amountField + country + nameField + cityField + additionalData + '6304';
+  
+  let crc = 0xFFFF;
+  for (let i = 0; i < payload.length; i++) {
+      crc ^= payload.charCodeAt(i) << 8;
+      for (let j = 0; j < 8; j++) {
+          if ((crc & 0x8000) > 0) {
+              crc = (crc << 1) ^ 0x1021;
+          } else {
+              crc = crc << 1;
+          }
+      }
+  }
+  return payload + (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+}
+
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('');
@@ -432,11 +471,29 @@ function App() {
                 </select>
 
                 {selectedTeam === 'Pix' && (
-                  <div className="pix-info-box">
-                    <strong>Chave PIX da Igreja/Retiro:</strong>
-                    <div className="pix-key-display">
-                      {pixKey ? pixKey : 'Nenhuma chave cadastrada! Vá em ⚙️ Configurações.'}
-                    </div>
+                  <div className="pix-info-box" style={{textAlign: 'center'}}>
+                    <strong>Pagamento via PIX</strong>
+                    {pixKey ? (
+                      <>
+                        <div style={{margin: '1rem 0'}}>
+                          <img 
+                            src={\`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=\${encodeURIComponent(generatePixPayload(pixKey, total))}\`} 
+                            alt="QR Code PIX" 
+                            style={{borderRadius: '8px', border: '4px solid white'}}
+                          />
+                        </div>
+                        <div className="pix-key-display" style={{fontSize: '0.9rem'}}>
+                          Chave: {pixKey}
+                        </div>
+                        <p style={{fontSize: '0.8rem', color: '#ccc', marginTop: '0.5rem'}}>
+                          O valor de <strong>R$ {total.toFixed(2).replace('.', ',')}</strong> já está embutido no QR Code.
+                        </p>
+                      </>
+                    ) : (
+                      <div className="pix-key-display">
+                        Nenhuma chave cadastrada! Vá em ⚙️ Configurações.
+                      </div>
+                    )}
                   </div>
                 )}
 
