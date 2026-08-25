@@ -3,6 +3,7 @@ import './App.css';
 
 // Tipos
 type Product = { id: number, name: string, price: number, stock: number, imageUrl?: string };
+type Customer = { id: number, name: string, phone: string, team: string };
 type CartItem = Product & { quantity: number };
 type Team = { id: number, name: string, balance: number };
 type Transaction = { id: number, seller: string, team: string, buyerName: string, buyerPhone: string, total: number, date: string, cart: CartItem[] };
@@ -13,14 +14,15 @@ function App() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   
-  // Abas (catalog | reports | settings | manage_products)
-  const [activeTab, setActiveTab] = useState<'catalog' | 'reports' | 'settings' | 'manage_products'>('catalog');
+  // Abas (catalog | reports | settings | manage_products | manage_customers)
+  const [activeTab, setActiveTab] = useState<'catalog' | 'reports' | 'settings' | 'manage_products' | 'manage_customers'>('catalog');
 
   // Configurações
   const [pixKey, setPixKey] = useState(() => localStorage.getItem('pixKey') || '');
 
   // Dados do BD
   const [products, setProducts] = useState<Product[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   
@@ -63,6 +65,38 @@ function App() {
     fetchData();
   };
 
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [newCustomerName, setNewCustomerName] = useState('');
+  const [newCustomerPhone, setNewCustomerPhone] = useState('');
+  const [newCustomerTeam, setNewCustomerTeam] = useState('');
+
+  const handleSaveCustomer = async () => {
+    const token = localStorage.getItem('token');
+    const url = editingCustomer ? `/api/customers/${editingCustomer.id}` : '/api/customers';
+    const method = editingCustomer ? 'PUT' : 'POST';
+    
+    await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ name: newCustomerName, phone: newCustomerPhone, team: newCustomerTeam })
+    });
+    setEditingCustomer(null);
+    setNewCustomerName('');
+    setNewCustomerPhone('');
+    setNewCustomerTeam('');
+    fetchData();
+  };
+
+  const handleDeleteCustomer = async (id: number) => {
+    if (!confirm('Excluir esta pessoa?')) return;
+    const token = localStorage.getItem('token');
+    await fetch(`/api/customers/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    fetchData();
+  };
+
   const fetchData = async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -78,6 +112,14 @@ function App() {
       } else {
         setIsLoggedIn(false);
         localStorage.removeItem('token');
+      }
+
+      // Busca clientes
+      const custRes = await fetch('/api/customers', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (custRes.ok) {
+        setCustomers(await custRes.json());
       }
       
       // Busca equipes (estáticas por enquanto)
@@ -166,6 +208,13 @@ function App() {
       return;
     }
 
+    let finalTeam = selectedTeam;
+    if (selectedTeam.startsWith('customer_')) {
+      const cId = parseInt(selectedTeam.split('_')[1]);
+      const c = customers.find(x => x.id === cId);
+      if (c) finalTeam = c.team;
+    }
+
     const token = localStorage.getItem('token');
     fetch('/api/checkout', {
       method: 'POST',
@@ -174,7 +223,7 @@ function App() {
         'Authorization': `Bearer ${token}` 
       },
       body: JSON.stringify({
-        team: selectedTeam,
+        team: finalTeam,
         buyerName,
         buyerPhone,
         cart,
@@ -278,6 +327,12 @@ function App() {
             📦 Produtos
           </button>
           <button 
+            className={`nav-btn ${activeTab === 'manage_customers' ? 'active' : ''}`}
+            onClick={() => setActiveTab('manage_customers')}
+          >
+            👥 Pessoas
+          </button>
+          <button 
             className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
             onClick={() => setActiveTab('settings')}
           >
@@ -341,15 +396,37 @@ function App() {
                 <label>Lançar na conta (Fiado):</label>
                 <select 
                   value={selectedTeam} 
-                  onChange={(e) => setSelectedTeam(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedTeam(e.target.value);
+                    if (e.target.value.startsWith('customer_')) {
+                      const cId = parseInt(e.target.value.split('_')[1]);
+                      const c = customers.find(x => x.id === cId);
+                      if (c) {
+                        setBuyerName(c.name);
+                        setBuyerPhone(c.phone);
+                      }
+                    } else {
+                      setBuyerName('');
+                      setBuyerPhone('');
+                    }
+                  }}
                   style={{marginBottom: '1rem'}}
                 >
                   <option value="">-- Forma de Pagamento --</option>
                   <option value="Dinheiro">💵 Pagamento em Dinheiro</option>
                   <option value="Pix">💠 Pagamento via PIX</option>
-                  <optgroup label="Lançar Fiado (Equipes)">
+                  
+                  {customers.length > 0 && (
+                    <optgroup label="Pessoas Cadastradas (Fiado)">
+                      {customers.map(c => (
+                        <option key={c.id} value={`customer_${c.id}`}>{c.name} - {c.team}</option>
+                      ))}
+                    </optgroup>
+                  )}
+
+                  <optgroup label="Lançar Fiado (Pessoa Nova)">
                     {teams.map(t => (
-                      <option key={t.id} value={t.name}>{t.name}</option>
+                      <option key={t.id} value={t.name}>{t.name} (Digitar Nome)</option>
                     ))}
                   </optgroup>
                 </select>
@@ -363,7 +440,7 @@ function App() {
                   </div>
                 )}
 
-                {selectedTeam && selectedTeam !== 'Dinheiro' && selectedTeam !== 'Pix' && (
+                {selectedTeam && selectedTeam !== 'Dinheiro' && selectedTeam !== 'Pix' && !selectedTeam.startsWith('customer_') && (
                   <div className="buyer-info-box">
                     <label>Nome da Pessoa:</label>
                     <input 
@@ -517,6 +594,49 @@ function App() {
                 <div style={{display: 'flex', gap: '0.5rem'}}>
                   <button onClick={() => { setEditingProduct(p); setNewProductName(p.name); setNewProductPrice(p.price.toString()); setNewProductImage(p.imageUrl || ''); }} style={{background: '#3b82f6', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer'}}>Editar</button>
                   <button onClick={() => handleDeleteProduct(p.id)} style={{background: '#ef4444', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer'}}>Deletar</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'manage_customers' && (
+        <div className="reports-container">
+          <h2>👥 Gerenciar Pessoas</h2>
+          <div className="settings-card">
+            <h3>{editingCustomer ? 'Editar Pessoa' : 'Cadastrar Nova Pessoa'}</h3>
+            <div className="settings-field">
+              <label>Nome Completo:</label>
+              <input type="text" value={newCustomerName} onChange={e => setNewCustomerName(e.target.value)} className="buyer-input" placeholder="Ex: João Silva" />
+            </div>
+            <div className="settings-field" style={{marginTop: '1rem'}}>
+              <label>Celular (WhatsApp):</label>
+              <input type="text" value={newCustomerPhone} onChange={e => setNewCustomerPhone(e.target.value)} className="buyer-input" placeholder="Ex: (27) 99999-9999" />
+            </div>
+            <div className="settings-field" style={{marginTop: '1rem'}}>
+              <label>Equipe (Obrigatório):</label>
+              <select value={newCustomerTeam} onChange={e => setNewCustomerTeam(e.target.value)} className="buyer-input">
+                <option value="">-- Selecione a Equipe --</option>
+                {teams.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+              </select>
+            </div>
+            <div style={{marginTop: '1rem', display: 'flex', gap: '1rem'}}>
+              <button onClick={handleSaveCustomer} className="checkout-btn" style={{width: 'auto', padding: '0.5rem 2rem'}} disabled={!newCustomerName || !newCustomerTeam}>Salvar</button>
+              {editingCustomer && <button onClick={() => { setEditingCustomer(null); setNewCustomerName(''); setNewCustomerPhone(''); setNewCustomerTeam(''); }} className="logout-btn" style={{padding: '0.5rem 1rem', border: 'none', background: '#444'}}>Cancelar</button>}
+            </div>
+          </div>
+
+          <div className="transactions-list" style={{marginTop: '2rem'}}>
+            {customers.map(c => (
+              <div key={c.id} className="transaction-card" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                <div>
+                  <strong>{c.name}</strong> <span style={{color: '#a78bfa'}}>({c.team})</span><br/>
+                  <span style={{fontSize: '0.9rem', color: '#999'}}>{c.phone || 'Sem número'}</span>
+                </div>
+                <div style={{display: 'flex', gap: '0.5rem'}}>
+                  <button onClick={() => { setEditingCustomer(c); setNewCustomerName(c.name); setNewCustomerPhone(c.phone); setNewCustomerTeam(c.team); }} style={{background: '#3b82f6', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer'}}>Editar</button>
+                  <button onClick={() => handleDeleteCustomer(c.id)} style={{background: '#ef4444', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer'}}>Deletar</button>
                 </div>
               </div>
             ))}

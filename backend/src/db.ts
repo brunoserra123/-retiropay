@@ -58,6 +58,13 @@ export const initDb = async () => {
     stock INTEGER
   )`);
 
+  await dbRun(`CREATE TABLE IF NOT EXISTS customers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    phone TEXT,
+    team TEXT
+  )`);
+
   await dbRun(`CREATE TABLE IF NOT EXISTS transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     seller TEXT,

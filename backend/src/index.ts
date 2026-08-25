@@ -112,6 +112,48 @@ app.delete('/api/products/:id', authenticateToken, async (req: AuthRequest, res:
   }
 });
 
+// 2.5 ROTAS DE CLIENTES/PESSOAS (Protegida)
+app.get('/api/customers', authenticateToken, async (req, res) => {
+  try {
+    const customers = await dbAll('SELECT * FROM customers ORDER BY name ASC');
+    res.json(customers);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar clientes' });
+  }
+});
+
+app.post('/api/customers', authenticateToken, async (req: AuthRequest, res: Response) => {
+  if (req.user?.role !== 'admin') return res.status(403).json({ error: 'Apenas admin pode adicionar clientes' });
+  try {
+    const { name, phone, team } = req.body;
+    await dbRun('INSERT INTO customers (name, phone, team) VALUES (?, ?, ?)', [name, phone, team]);
+    res.json({ message: 'Cliente adicionado' });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao adicionar cliente' });
+  }
+});
+
+app.put('/api/customers/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
+  if (req.user?.role !== 'admin') return res.status(403).json({ error: 'Apenas admin pode editar' });
+  try {
+    const { name, phone, team } = req.body;
+    await dbRun('UPDATE customers SET name = ?, phone = ?, team = ? WHERE id = ?', [name, phone, team, req.params.id]);
+    res.json({ message: 'Cliente atualizado' });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao editar cliente' });
+  }
+});
+
+app.delete('/api/customers/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
+  if (req.user?.role !== 'admin') return res.status(403).json({ error: 'Apenas admin pode deletar' });
+  try {
+    await dbRun('DELETE FROM customers WHERE id = ?', [req.params.id]);
+    res.json({ message: 'Cliente deletado' });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao deletar cliente' });
+  }
+});
+
 // 3. ROTA DE VENDAS/CONTRATOS (Protegida)
 app.post('/api/checkout', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
