@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 
 // Tipos
-type Product = { id: number, name: string, price: number, stock: number };
+type Product = { id: number, name: string, price: number, stock: number, imageUrl?: string };
 type CartItem = Product & { quantity: number };
 type Team = { id: number, name: string, balance: number };
 type Transaction = { id: number, seller: string, team: string, buyerName: string, buyerPhone: string, total: number, date: string, cart: CartItem[] };
@@ -13,8 +13,8 @@ function App() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   
-  // Abas (catalog | reports | settings)
-  const [activeTab, setActiveTab] = useState<'catalog' | 'reports' | 'settings'>('catalog');
+  // Abas (catalog | reports | settings | manage_products)
+  const [activeTab, setActiveTab] = useState<'catalog' | 'reports' | 'settings' | 'manage_products'>('catalog');
 
   // Configurações
   const [pixKey, setPixKey] = useState(() => localStorage.getItem('pixKey') || '');
@@ -30,6 +30,38 @@ function App() {
   const [buyerName, setBuyerName] = useState<string>('');
   const [buyerPhone, setBuyerPhone] = useState<string>('');
   const [searchPhone, setSearchPhone] = useState<string>('');
+
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [newProductName, setNewProductName] = useState('');
+  const [newProductPrice, setNewProductPrice] = useState('');
+  const [newProductImage, setNewProductImage] = useState('');
+
+  const handleSaveProduct = async () => {
+    const token = localStorage.getItem('token');
+    const url = editingProduct ? `/api/products/${editingProduct.id}` : '/api/products';
+    const method = editingProduct ? 'PUT' : 'POST';
+    
+    await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ name: newProductName, price: Number(newProductPrice), stock: 100, imageUrl: newProductImage })
+    });
+    setEditingProduct(null);
+    setNewProductName('');
+    setNewProductPrice('');
+    setNewProductImage('');
+    fetchData();
+  };
+
+  const handleDeleteProduct = async (id: number) => {
+    if (!confirm('Excluir este produto?')) return;
+    const token = localStorage.getItem('token');
+    await fetch(`/api/products/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    fetchData();
+  };
 
   const fetchData = async () => {
     const token = localStorage.getItem('token');
@@ -240,6 +272,12 @@ function App() {
             📊 Relatórios
           </button>
           <button 
+            className={`nav-btn ${activeTab === 'manage_products' ? 'active' : ''}`}
+            onClick={() => setActiveTab('manage_products')}
+          >
+            📦 Produtos
+          </button>
+          <button 
             className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
             onClick={() => setActiveTab('settings')}
           >
@@ -262,7 +300,9 @@ function App() {
               ) : (
                 products.map(product => (
                   <div key={product.id} className="product-card">
-                    <div className="product-image">📦</div>
+                    <div className="product-image">
+                      {product.imageUrl ? <img src={product.imageUrl} alt={product.name} style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px'}} /> : '📦'}
+                    </div>
                     <h3>{product.name}</h3>
                     <p className="price">R$ {product.price.toFixed(2).replace('.', ',')}</p>
                     <button onClick={() => addToCart(product)}>+ Adicionar</button>
@@ -435,6 +475,51 @@ function App() {
                 Chave PIX salva com sucesso! Ela já vai aparecer nas vendas.
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'manage_products' && (
+        <div className="reports-container">
+          <h2>📦 Gerenciar Produtos</h2>
+          <div className="settings-card">
+            <h3>{editingProduct ? 'Editar Produto' : 'Adicionar Novo Produto'}</h3>
+            <div className="settings-field">
+              <label>Nome do Produto:</label>
+              <input type="text" value={newProductName} onChange={e => setNewProductName(e.target.value)} className="buyer-input" placeholder="Ex: Fandangos" />
+            </div>
+            <div className="settings-field" style={{marginTop: '1rem'}}>
+              <label>Preço (R$):</label>
+              <input type="number" step="0.01" value={newProductPrice} onChange={e => setNewProductPrice(e.target.value)} className="buyer-input" placeholder="Ex: 5.50" />
+            </div>
+            <div className="settings-field" style={{marginTop: '1rem'}}>
+              <label>Link da Imagem (URL da foto do Google):</label>
+              <input type="text" value={newProductImage} onChange={e => setNewProductImage(e.target.value)} className="buyer-input" placeholder="Ex: https://..." />
+            </div>
+            <div style={{marginTop: '1rem', display: 'flex', gap: '1rem'}}>
+              <button onClick={handleSaveProduct} className="checkout-btn" style={{width: 'auto', padding: '0.5rem 2rem'}}>Salvar</button>
+              {editingProduct && <button onClick={() => { setEditingProduct(null); setNewProductName(''); setNewProductPrice(''); setNewProductImage(''); }} className="logout-btn" style={{padding: '0.5rem 1rem', border: 'none', background: '#444'}}>Cancelar</button>}
+            </div>
+          </div>
+
+          <div className="transactions-list" style={{marginTop: '2rem'}}>
+            {products.map(p => (
+              <div key={p.id} className="transaction-card" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+                  <div style={{width: '50px', height: '50px', background: '#333', borderRadius: '8px', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+                    {p.imageUrl ? <img src={p.imageUrl} style={{width: '100%', height: '100%', objectFit: 'cover'}} /> : '📦'}
+                  </div>
+                  <div>
+                    <strong>{p.name}</strong><br/>
+                    <span style={{color: '#a78bfa'}}>R$ {p.price.toFixed(2)}</span>
+                  </div>
+                </div>
+                <div style={{display: 'flex', gap: '0.5rem'}}>
+                  <button onClick={() => { setEditingProduct(p); setNewProductName(p.name); setNewProductPrice(p.price.toString()); setNewProductImage(p.imageUrl || ''); }} style={{background: '#3b82f6', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer'}}>Editar</button>
+                  <button onClick={() => handleDeleteProduct(p.id)} style={{background: '#ef4444', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer'}}>Deletar</button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

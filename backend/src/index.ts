@@ -80,6 +80,38 @@ app.get('/api/products', authenticateToken, async (req, res) => {
   }
 });
 
+app.post('/api/products', authenticateToken, async (req: AuthRequest, res: Response) => {
+  if (req.user?.role !== 'admin') return res.status(403).json({ error: 'Apenas admin pode adicionar produtos' });
+  try {
+    const { name, price, stock, imageUrl } = req.body;
+    await dbRun('INSERT INTO products (name, price, stock, imageUrl) VALUES (?, ?, ?, ?)', [name, price, stock, imageUrl || '']);
+    res.json({ message: 'Produto adicionado' });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao adicionar produto' });
+  }
+});
+
+app.put('/api/products/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
+  if (req.user?.role !== 'admin') return res.status(403).json({ error: 'Apenas admin pode editar' });
+  try {
+    const { name, price, stock, imageUrl } = req.body;
+    await dbRun('UPDATE products SET name = ?, price = ?, stock = ?, imageUrl = ? WHERE id = ?', [name, price, stock, imageUrl || '', req.params.id]);
+    res.json({ message: 'Produto atualizado' });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao editar produto' });
+  }
+});
+
+app.delete('/api/products/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
+  if (req.user?.role !== 'admin') return res.status(403).json({ error: 'Apenas admin pode deletar' });
+  try {
+    await dbRun('DELETE FROM products WHERE id = ?', [req.params.id]);
+    res.json({ message: 'Produto deletado' });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao deletar produto' });
+  }
+});
+
 // 3. ROTA DE VENDAS/CONTRATOS (Protegida)
 app.post('/api/checkout', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
