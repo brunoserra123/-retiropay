@@ -1,0 +1,109 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "admin",
+      "password": "$2b$10$Pbe84vNm32dziF7egn0Gw.2FTdzAKn8N6s7Y.UE47v397LtkK6GAS",
+      "role": "admin"
+    }
+  ],
+  "teams": [
+    {
+      "id": 1787659790038,
+      "name": "Troca Amarela",
+      "balance": 5
+    },
+    {
+      "id": 1787660219045,
+      "name": "Troca Roxa",
+      "balance": 17
+    },
+    {
+      "id": 1787660488634,
+      "name": "Pix",
+      "balance": 10
+    }
+  ],
+  "products": [
+    {
+      "id": 1,
+      "name": "Refrigerante Lata",
+      "price": 5,
+      "stock": 100
+    },
+    {
+      "id": 2,
+      "name": "Chocolate",
+      "price": 3.5,
+      "stock": 50
+    },
+    {
+      "id": 3,
+      "name": "Cachorro Quente",
+      "price": 10,
+      "stock": 30
+    }
+  ],
+  "transactions": [
+    {
+      "id": 1787659790038,
+      "seller": "admin",
+      "team": "Troca Amarela",
+      "buyerName": "brunoserra",
+      "cart": [
+        {
+          "id": 1,
+          "name": "Refrigerante Lata",
+          "price": 5,
+          "stock": 100,
+          "quantity": 1
+        }
+      ],
+      "total": 5,
+      "date": "2026-08-25T12:09:50.038Z"
+    },
+    {
+      "id": 1787660219045,
+      "seller": "admin",
+      "team": "Troca Roxa",
+      "buyerName": "bruno",
+      "buyerPhone": "61996522309",
+      "cart": [
+        {
+          "id": 2,
+          "name": "Chocolate",
+          "price": 3.5,
+          "stock": 50,
+          "quantity": 2
+        },
+        {
+          "id": 3,
+          "name": "Cachorro Quente",
+          "price": 10,
+          "stock": 30,
+          "quantity": 1
+        }
+      ],
+      "total": 17,
+      "date": "2026-08-25T12:16:59.045Z"
+    },
+    {
+      "id": 1787660488634,
+      "seller": "admin",
+      "team": "Pix",
+      "buyerName": "",
+      "buyerPhone": "",
+      "cart": [
+        {
+          "id": 3,
+          "name": "Cachorro Quente",
+          "price": 10,
+          "stock": 30,
+          "quantity": 1
+        }
+      ],
+      "total": 10,
+      "date": "2026-08-25T12:21:28.634Z"
+    }
+  ]
+}
