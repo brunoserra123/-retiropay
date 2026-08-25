@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetiroPay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Phosphor Icons para ícones premium -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo">
+                <i class="ph-fill ph-wallet"></i>
+                <h1>RetiroPay</h1>
+            </div>
+            <button id="btn-settings" class="icon-btn"><i class="ph ph-gear"></i></button>
+        </header>
+
+        <nav class="app-tabs">
+            <button class="tab-btn active" data-tab="pos"><i class="ph ph-storefront"></i> Caixa</button>
+            <button class="tab-btn" data-tab="products"><i class="ph ph-package"></i> Produtos</button>
+        </nav>
+
+        <main class="app-content">
+            <!-- Ponto de Venda (Caixa) -->
+            <section id="tab-pos" class="tab-pane active">
+                <div class="pos-layout">
+                    <div class="product-grid" id="pos-product-grid">
+                        <!-- Produtos serão injetados aqui via JS -->
+                    </div>
+                    
+                    <div class="cart-panel">
+                        <h2>Pedido Atual</h2>
+                        <div class="cart-items" id="cart-items">
+                            <!-- Itens do carrinho aqui -->
+                        </div>
+                        <div class="cart-footer">
+                            <div class="cart-total">
+                                <span>Total:</span>
+                                <span id="cart-total-value">R$ 0,00</span>
+                            </div>
+                            <button id="btn-checkout" class="btn-primary" disabled>
+                                <i class="ph-fill ph-whatsapp-logo"></i>
+                                Cobrar no WhatsApp
+                            </button>
+                            <button id="btn-clear-cart" class="btn-secondary">Limpar Pedido</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Cadastro de Produtos -->
+            <section id="tab-products" class="tab-pane">
+                <div class="products-header">
+                    <h2>Gerenciar Produtos</h2>
+                    <button id="btn-add-product" class="btn-primary"><i class="ph ph-plus"></i> Novo Produto</button>
+                </div>
+                <div class="products-list" id="products-list">
+                    <!-- Lista de produtos aqui -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal: Adicionar/Editar Produto -->
+    <div id="modal-product" class="modal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h3 id="modal-product-title">Novo Produto</h3>
+                <button class="close-btn"><i class="ph ph-x"></i></button>
+            </div>
+            <form id="form-product">
+                <input type="hidden" id="prod-id">
+                <div class="input-group">
+                    <label for="prod-name">Nome do Produto</label>
+                    <input type="text" id="prod-name" required placeholder="Ex: Refrigerante Lata">
+                </div>
+                <div class="input-group">
+                    <label for="prod-price">Preço (R$)</label>
+                    <input type="number" id="prod-price" step="0.01" required placeholder="5.00">
+                </div>
+                <button type="submit" class="btn-primary w-100">Salvar Produto</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Configurações -->
+    <div id="modal-settings" class="modal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h3>Configurações</h3>
+                <button class="close-btn"><i class="ph ph-x"></i></button>
+            </div>
+            <form id="form-settings">
+                <div class="input-group">
+                    <label for="set-pix">Chave PIX (Opcional)</label>
+                    <input type="text" id="set-pix" placeholder="sua-chave-pix@email.com">
+                    <small>Aparecerá automaticamente na mensagem do WhatsApp para o cliente.</small>
+                </div>
+                <button type="submit" class="btn-primary w-100">Salvar Configurações</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Checkout WhatsApp -->
+    <div id="modal-checkout" class="modal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h3>Finalizar Venda</h3>
+                <button class="close-btn"><i class="ph ph-x"></i></button>
+            </div>
+            <form id="form-checkout">
+                <div class="input-group">
+                    <label for="checkout-phone">WhatsApp do Cliente (Opcional)</label>
+                    <input type="tel" id="checkout-phone" placeholder="DDD + Número (Ex: 11999999999)">
+                    <small>Se deixar vazio, abrirá os contatos para você escolher para quem enviar.</small>
+                </div>
+                <button type="submit" class="btn-whatsapp w-100"><i class="ph-fill ph-whatsapp-logo"></i> Enviar Cobrança</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
