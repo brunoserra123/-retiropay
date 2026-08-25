@@ -157,8 +157,8 @@ const startServer = async () => {
       console.log('Usuário admin criado!');
     }
 
-    app.listen(PORT, () => {
-      console.log(`Backend rodando em http://localhost:${PORT}`);
+    app.listen(PORT as number, '0.0.0.0', () => {
+      console.log(`Backend rodando na porta ${PORT}`);
     });
   } catch (err) {
     console.error('Falha ao inicializar o banco de dados:', err);
