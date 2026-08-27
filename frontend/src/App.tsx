@@ -14,22 +14,22 @@ function generatePixPayload(pixKey: string, amount: number, merchantName = 'Reti
   const payloadFormat = '000201';
   
   const gui = '0014br.gov.bcb.pix';
-  const key = \`01\${pixKey.length.toString().padStart(2, '0')}\${pixKey}\`;
-  const merchantAccountInfo = \`26\${(gui.length + key.length).toString().padStart(2, '0')}\${gui}\${key}\`;
+  const key = `01${pixKey.length.toString().padStart(2, '0')}${pixKey}`;
+  const merchantAccountInfo = `26${(gui.length + key.length).toString().padStart(2, '0')}${gui}${key}`;
   
   const mcc = '52040000';
   const currency = '5303986';
-  const amountField = \`54\${amountStr.length.toString().padStart(2, '0')}\${amountStr}\`;
+  const amountField = `54${amountStr.length.toString().padStart(2, '0')}${amountStr}`;
   const country = '5802BR';
   
   merchantName = merchantName.substring(0, 25).replace(/[^a-zA-Z0-9 ]/g, '');
   merchantCity = merchantCity.substring(0, 15).replace(/[^a-zA-Z0-9 ]/g, '');
   
-  const nameField = \`59\${merchantName.length.toString().padStart(2, '0')}\${merchantName}\`;
-  const cityField = \`60\${merchantCity.length.toString().padStart(2, '0')}\${merchantCity}\`;
+  const nameField = `59${merchantName.length.toString().padStart(2, '0')}${merchantName}`;
+  const cityField = `60${merchantCity.length.toString().padStart(2, '0')}${merchantCity}`;
   
   const txid = '0503***';
-  const additionalData = \`62\${txid.length.toString().padStart(2, '0')}\${txid}\`;
+  const additionalData = `62${txid.length.toString().padStart(2, '0')}${txid}`;
   
   let payload = payloadFormat + merchantAccountInfo + mcc + currency + amountField + country + nameField + cityField + additionalData + '6304';
   
@@ -491,7 +491,7 @@ function App() {
                       <>
                         <div style={{margin: '1rem 0'}}>
                           <img 
-                            src={\`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=\${encodeURIComponent(generatePixPayload(pixKey, total))}\`} 
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(generatePixPayload(pixKey, total))}`} 
                             alt="QR Code PIX" 
                             style={{borderRadius: '8px', border: '4px solid white'}}
                           />
