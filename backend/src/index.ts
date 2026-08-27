@@ -2,12 +2,7 @@ import express, { type Request, type Response, type NextFunction } from 'express
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { dbAll, dbGet, dbRun, initDb } from './db.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -204,17 +199,7 @@ app.get('/api/transactions', authenticateToken, async (req: AuthRequest, res: Re
   }
 });
 
-// ==========================================
-// ARQUIVOS ESTÁTICOS (Frontend Fullstack)
-// ==========================================
-// Servir a pasta dist do frontend
-const frontendPath = path.join(__dirname, '../../frontend/dist');
-app.use(express.static(frontendPath));
-
-// Qualquer rota que não seja /api, entrega o index.html do React
-app.use((req, res) => {
-  res.sendFile(path.join(frontendPath, 'index.html'));
-});
+// O Vercel gerencia os arquivos estáticos, o Express fica apenas com a API
 
 // ==========================================
 // INICIALIZAÇÃO
