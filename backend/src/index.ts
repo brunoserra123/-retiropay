@@ -2,7 +2,36 @@ import express, { type Request, type Response, type NextFunction } from 'express
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { dbAll, dbGet, dbRun, initDb } from './db.js';
+import { Pool } from 'pg';
+
+const connectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_6vXUGz7kYbiO@ep-little-dust-ac4158o0-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+
+const pool = new Pool({
+  connectionString,
+  ssl: { rejectUnauthorized: false }
+});
+
+const convertSqliteToPg = (sql: string) => {
+  let i = 1;
+  return sql.replace(/\?/g, () => `$${i++}`);
+};
+
+const dbRun = async (sql: string, params: any[] = []): Promise<any> => {
+  const pgSql = convertSqliteToPg(sql);
+  return await pool.query(pgSql, params);
+};
+
+const dbGet = async <T>(sql: string, params: any[] = []): Promise<T | undefined> => {
+  const pgSql = convertSqliteToPg(sql);
+  const result = await pool.query(pgSql, params);
+  return result.rows[0] as T;
+};
+
+const dbAll = async <T>(sql: string, params: any[] = []): Promise<T[]> => {
+  const pgSql = convertSqliteToPg(sql);
+  const result = await pool.query(pgSql, params);
+  return result.rows as T[];
+};
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -200,42 +229,6 @@ app.get('/api/transactions', authenticateToken, async (req: AuthRequest, res: Re
 });
 
 // O Vercel gerencia os arquivos estáticos, o Express fica apenas com a API
-
-// ==========================================
-// INICIALIZAÇÃO
-// ==========================================
-const startServer = async () => {
-  try {
-    await initDb();
-    
-    // Cria admin se não existir
-    const admin = await dbGet('SELECT * FROM users WHERE username = $1', ['admin']);
-    if (!admin) {
-      const hash = bcrypt.hashSync('admin123', 10);
-      await dbRun('INSERT INTO users (username, password, role) VALUES ($1, $2, $3)', ['admin', hash, 'admin']);
-      console.log('Usuário admin criado!');
-    }
-
-    // Cria caixa se não existir
-    const caixa = await dbGet('SELECT * FROM users WHERE username = $1', ['caixa']);
-    if (!caixa) {
-      const hash = bcrypt.hashSync('caixa123', 10);
-      await dbRun('INSERT INTO users (username, password, role) VALUES ($1, $2, $3)', ['caixa', hash, 'caixa']);
-      console.log('Usuário caixa criado!');
-    }
-
-    app.listen(PORT as number, '0.0.0.0', () => {
-      console.log(`Backend rodando na porta ${PORT}`);
-    });
-  } catch (err) {
-    console.error('Falha ao inicializar o banco de dados:', err);
-  }
-};
-
-// Vercel não suporta app.listen(). Só roda localmente.
-if (!process.env.VERCEL) {
-  startServer();
-}
 
 // Exporta para Serverless Functions do Vercel
 export default app;
