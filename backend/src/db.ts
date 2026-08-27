@@ -1,72 +1,69 @@
-import sqlite3 from 'sqlite3';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { Pool } from 'pg';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const connectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_6vXUGz7kYbiO@ep-little-dust-ac4158o0-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
 
-const dbPath = process.env.DB_PATH || path.resolve(__dirname, 'database.sqlite');
-const db = new sqlite3.Database(dbPath);
+const pool = new Pool({
+  connectionString,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
-// Utility functions to wrap sqlite3 in Promises
-export const dbRun = (sql: string, params: any[] = []): Promise<sqlite3.RunResult> => {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function (err) {
-      if (err) reject(err);
-      else resolve(this);
-    });
-  });
+// Helper para converter ? (SQLite) para $1, $2 (Postgres)
+const convertSqliteToPg = (sql: string) => {
+  let i = 1;
+  return sql.replace(/\?/g, () => `$${i++}`);
 };
 
-export const dbGet = <T>(sql: string, params: any[] = []): Promise<T | undefined> => {
-  return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
-      if (err) reject(err);
-      else resolve(row as T);
-    });
-  });
+export const dbRun = async (sql: string, params: any[] = []): Promise<any> => {
+  const pgSql = convertSqliteToPg(sql);
+  const result = await pool.query(pgSql, params);
+  return result;
 };
 
-export const dbAll = <T>(sql: string, params: any[] = []): Promise<T[]> => {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows as T[]);
-    });
-  });
+export const dbGet = async <T>(sql: string, params: any[] = []): Promise<T | undefined> => {
+  const pgSql = convertSqliteToPg(sql);
+  const result = await pool.query(pgSql, params);
+  return result.rows[0] as T;
+};
+
+export const dbAll = async <T>(sql: string, params: any[] = []): Promise<T[]> => {
+  const pgSql = convertSqliteToPg(sql);
+  const result = await pool.query(pgSql, params);
+  return result.rows as T[];
 };
 
 // Initialize tables and default data
 export const initDb = async () => {
   await dbRun(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     username TEXT UNIQUE,
     password TEXT,
     role TEXT
   )`);
 
   await dbRun(`CREATE TABLE IF NOT EXISTS teams (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     name TEXT UNIQUE,
     balance REAL DEFAULT 0
   )`);
 
   await dbRun(`CREATE TABLE IF NOT EXISTS products (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     name TEXT,
     price REAL,
     stock INTEGER
   )`);
 
   await dbRun(`CREATE TABLE IF NOT EXISTS customers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     name TEXT,
     phone TEXT,
     team TEXT
   )`);
 
   await dbRun(`CREATE TABLE IF NOT EXISTS transactions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     seller TEXT,
     team TEXT,
     buyerName TEXT,
@@ -76,7 +73,6 @@ export const initDb = async () => {
     cart TEXT
   )`);
 
-  // Adiciona a coluna imageUrl se não existir (ignora erro se já existir)
   try {
     await dbRun(`ALTER TABLE products ADD COLUMN imageUrl TEXT`);
   } catch (err) {

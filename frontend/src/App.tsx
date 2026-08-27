@@ -52,6 +52,7 @@ function App() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [role, setRole] = useState(() => localStorage.getItem('role') || '');
   
   // Abas (catalog | reports | settings | manage_products | manage_customers)
   const [activeTab, setActiveTab] = useState<'catalog' | 'reports' | 'settings' | 'manage_products' | 'manage_customers'>('catalog');
@@ -207,7 +208,10 @@ function App() {
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem('token', data.token);
+        localStorage.setItem('role', data.role);
+        setRole(data.role);
         setIsLoggedIn(true);
+        fetchData();
       } else {
         const errData = await response.json();
         setError(errData.error || 'Credenciais inválidas');
@@ -321,6 +325,10 @@ function App() {
         <div className="login-box">
           <h1>RetiroPay</h1>
           <p>Faça login para continuar</p>
+          <p style={{fontSize: '0.85rem', color: '#999', marginBottom: '1rem'}}>
+            Admin: <code>admin</code> / <code>admin123</code><br/>
+            Caixa: <code>caixa</code> / <code>caixa123</code>
+          </p>
           {error && <p style={{color: '#ef4444', marginBottom: '1rem'}}>{error}</p>}
           <form onSubmit={handleLogin}>
             <input 
@@ -359,27 +367,33 @@ function App() {
           >
             📊 Relatórios
           </button>
-          <button 
-            className={`nav-btn ${activeTab === 'manage_products' ? 'active' : ''}`}
-            onClick={() => setActiveTab('manage_products')}
-          >
-            📦 Produtos
-          </button>
-          <button 
-            className={`nav-btn ${activeTab === 'manage_customers' ? 'active' : ''}`}
-            onClick={() => setActiveTab('manage_customers')}
-          >
-            👥 Pessoas
-          </button>
-          <button 
-            className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('settings')}
-          >
-            ⚙️ Configurações
-          </button>
+          {role === 'admin' && (
+            <>
+              <button 
+                className={`nav-btn ${activeTab === 'manage_products' ? 'active' : ''}`}
+                onClick={() => setActiveTab('manage_products')}
+              >
+                📦 Produtos
+              </button>
+              <button 
+                className={`nav-btn ${activeTab === 'manage_customers' ? 'active' : ''}`}
+                onClick={() => setActiveTab('manage_customers')}
+              >
+                👥 Pessoas
+              </button>
+              <button 
+                className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
+                onClick={() => setActiveTab('settings')}
+              >
+                ⚙️ Configurações
+              </button>
+            </>
+          )}
           <button onClick={() => {
             setIsLoggedIn(false);
             localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            setRole('');
           }} className="logout-btn">Sair</button>
         </div>
       </header>

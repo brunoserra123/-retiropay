@@ -231,6 +231,14 @@ const startServer = async () => {
       console.log('Usuário admin criado!');
     }
 
+    // Cria caixa se não existir
+    const caixa = await dbGet('SELECT * FROM users WHERE username = ?', ['caixa']);
+    if (!caixa) {
+      const hash = bcrypt.hashSync('caixa123', 10);
+      await dbRun('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['caixa', hash, 'caixa']);
+      console.log('Usuário caixa criado!');
+    }
+
     app.listen(PORT as number, '0.0.0.0', () => {
       console.log(`Backend rodando na porta ${PORT}`);
     });

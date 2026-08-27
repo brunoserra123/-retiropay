@@ -1,0 +1,21 @@
+{
+  "name": "RetiroPay",
+  "short_name": "RetiroPay",
+  "description": "Sistema de Caixa Rápido e Checkout via WhatsApp",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#5b21b6",
+  "icons": [
+    {
+      "src": "icon-192.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "icon-192.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
