@@ -224,18 +224,18 @@ const startServer = async () => {
     await initDb();
     
     // Cria admin se não existir
-    const admin = await dbGet('SELECT * FROM users WHERE username = ?', ['admin']);
+    const admin = await dbGet('SELECT * FROM users WHERE username = $1', ['admin']);
     if (!admin) {
       const hash = bcrypt.hashSync('admin123', 10);
-      await dbRun('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['admin', hash, 'admin']);
+      await dbRun('INSERT INTO users (username, password, role) VALUES ($1, $2, $3)', ['admin', hash, 'admin']);
       console.log('Usuário admin criado!');
     }
 
     // Cria caixa se não existir
-    const caixa = await dbGet('SELECT * FROM users WHERE username = ?', ['caixa']);
+    const caixa = await dbGet('SELECT * FROM users WHERE username = $1', ['caixa']);
     if (!caixa) {
       const hash = bcrypt.hashSync('caixa123', 10);
-      await dbRun('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['caixa', hash, 'caixa']);
+      await dbRun('INSERT INTO users (username, password, role) VALUES ($1, $2, $3)', ['caixa', hash, 'caixa']);
       console.log('Usuário caixa criado!');
     }
 
@@ -247,4 +247,10 @@ const startServer = async () => {
   }
 };
 
-startServer();
+// Vercel não suporta app.listen(). Só roda localmente.
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+// Exporta para Serverless Functions do Vercel
+export default app;
