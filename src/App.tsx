@@ -325,10 +325,7 @@ function App() {
         <div className="login-box">
           <h1>RetiroPay</h1>
           <p>Faça login para continuar</p>
-          <p style={{fontSize: '0.85rem', color: '#999', marginBottom: '1rem'}}>
-            Admin: <code>admin</code> / <code>admin123</code><br/>
-            Caixa: <code>caixa</code> / <code>caixa123</code>
-          </p>
+
           {error && <p style={{color: '#ef4444', marginBottom: '1rem'}}>{error}</p>}
           <form onSubmit={handleLogin}>
             <input 

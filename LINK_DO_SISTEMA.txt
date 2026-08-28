@@ -1,0 +1,8 @@
+﻿=== LINK DO SISTEMA RETIROPAY ===
+
+Acesse o sistema por este link de qualquer celular ou computador:
+👉 https://retiropay-e2m6.vercel.app
+
+(Lembrando que o usuário administrador é "admin" e a senha é "admin123")
+
+=================================
