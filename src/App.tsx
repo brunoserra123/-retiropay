@@ -196,6 +196,31 @@ function App() {
     }
   }, [isLoggedIn, activeTab]);
 
+  // Sistema de Auto-Update (Checa novas versões a cada 2 minutos)
+  useEffect(() => {
+    let currentVersion = '';
+    const checkVersion = async () => {
+      try {
+        const res = await fetch('/api/version');
+        if (res.ok) {
+          const data = await res.json();
+          if (!currentVersion) {
+            currentVersion = data.version;
+          } else if (currentVersion !== data.version) {
+            console.log('Nova versão detectada! Recarregando...');
+            window.location.reload();
+          }
+        }
+      } catch (e) {
+        // Ignora erros de rede na checagem
+      }
+    };
+
+    const interval = setInterval(checkVersion, 120000); // 2 minutos
+    checkVersion();
+    return () => clearInterval(interval);
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');

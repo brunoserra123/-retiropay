@@ -212,6 +212,12 @@ app.post('/api/checkout', authenticateToken, async (req: AuthRequest, res: Respo
   }
 });
 
+// ROTA DE VERSÃO (Para auto-update)
+app.get('/api/version', (req, res) => {
+  res.json({ version: process.env.VERCEL_GIT_COMMIT_SHA || Date.now().toString() });
+});
+
+
 // 4. ROTA DE RELATÓRIOS/TRANSAÇÕES (Protegida)
 app.get('/api/transactions', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
