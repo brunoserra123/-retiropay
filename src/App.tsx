@@ -6,7 +6,7 @@ type Product = { id: number, name: string, price: number, stock: number, imageUr
 type Customer = { id: number, name: string, phone: string, team: string };
 type CartItem = Product & { quantity: number };
 type Team = { id: number, name: string, balance: number };
-type Transaction = { id: number, seller: string, team: string, buyerName: string, buyerPhone: string, total: number, date: string, cart: CartItem[] };
+type Transaction = { id: number, seller: string, team: string, buyerName?: string, buyername?: string, buyerPhone?: string, buyerphone?: string, total: number, date: string, cart: CartItem[] };
 
 // Gerador de Payload PIX (BR Code)
 function generatePixPayload(pixKey: string, amount: number, merchantName = 'Retiro', merchantCity = 'Cidade') {
@@ -247,7 +247,7 @@ function App() {
       return;
     }
     if (selectedTeam !== 'Dinheiro' && selectedTeam !== 'Pix' && (!buyerName.trim() || !buyerPhone.trim())) {
-      alert("Para venda fiado, por favor digite o NOME e o CELULAR do comprador.");
+      alert("Para a opção pagar depois, por favor digite o NOME e o CELULAR do comprador.");
       return;
     }
 
@@ -279,6 +279,23 @@ function App() {
         alert("Erro: " + data.error);
       } else {
         alert(`Sucesso! Compra de R$ ${total.toFixed(2)} registrada!`);
+        
+        if (buyerPhone && buyerPhone.trim() !== '') {
+          if (window.confirm("Deseja enviar o recibo pelo WhatsApp agora?")) {
+            const tempTx: Transaction = {
+              id: 0,
+              seller: '',
+              team: finalTeam,
+              buyerName,
+              buyerPhone,
+              total,
+              date: new Date().toISOString(),
+              cart: [...cart]
+            };
+            sendWhatsApp(tempTx);
+          }
+        }
+
         setCart([]);
         setSelectedTeam('');
         setBuyerName('');
@@ -289,13 +306,15 @@ function App() {
   };
 
   const sendWhatsApp = (t: Transaction) => {
-    if (!t.buyerPhone) return;
+    const phone = t.buyerPhone || t.buyerphone;
+    const name = t.buyerName || t.buyername || 'Cliente';
+    if (!phone) return;
     
     // Limpa o número para deixar só os dígitos
-    const cleanPhone = t.buyerPhone.replace(/\D/g, '');
+    const cleanPhone = phone.replace(/\D/g, '');
     const phoneWithCode = cleanPhone.length <= 11 ? `55${cleanPhone}` : cleanPhone;
 
-    let message = `Olá *${t.buyerName}*, aqui está o resumo da sua compra na conta da equipe *${t.team}* no Retiro:\n\n`;
+    let message = `Olá *${name}*, aqui está o resumo da sua compra na conta da equipe *${t.team}* no Retiro:\n\n`;
     
     t.cart.forEach(item => {
       message += `▪ ${item.quantity}x ${item.name} - R$ ${(item.price * item.quantity).toFixed(2).replace('.', ',')}\n`;
@@ -309,8 +328,8 @@ function App() {
 
   // Filtragem de transações por telefone ou nome
   const filteredTransactions = transactions.filter(t => {
-    const phone = t.buyerPhone || '';
-    const name = t.buyerName || '';
+    const phone = t.buyerPhone || t.buyerphone || '';
+    const name = t.buyerName || t.buyername || '';
     const team = t.team || '';
     const search = searchPhone.toLowerCase();
     
@@ -350,7 +369,19 @@ function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>RetiroPay</h1>
+        <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+          <h1>RetiroPay</h1>
+          <span style={{
+            background: role === 'admin' ? '#ef4444' : '#3b82f6',
+            color: 'white',
+            padding: '0.2rem 0.5rem',
+            borderRadius: '4px',
+            fontSize: '0.8rem',
+            fontWeight: 'bold'
+          }}>
+            {role === 'admin' ? 'ADMIN' : 'VENDEDOR'}
+          </span>
+        </div>
         <div className="header-nav">
           <button 
             className={`nav-btn ${activeTab === 'catalog' ? 'active' : ''}`}
@@ -443,7 +474,7 @@ function App() {
               </div>
               
               <div className="team-selector">
-                <label>Lançar na conta (Fiado):</label>
+                <label>Forma de Pagamento:</label>
                 <select 
                   value={selectedTeam} 
                   onChange={(e) => {
@@ -467,16 +498,16 @@ function App() {
                   <option value="Pix">💠 Pagamento via PIX</option>
                   
                   {customers.length > 0 && (
-                    <optgroup label="Pessoas Cadastradas (Fiado)">
+                    <optgroup label="Pessoas Cadastradas (Pagar Depois)">
                       {customers.map(c => (
-                        <option key={c.id} value={`customer_${c.id}`}>{c.name} - {c.team}</option>
+                        <option key={c.id} value={`customer_${c.id}`}>📓 Pagar Depois: {c.name} ({c.team})</option>
                       ))}
                     </optgroup>
                   )}
 
-                  <optgroup label="Lançar Fiado (Pessoa Nova)">
+                  <optgroup label="Pagar Depois (Pessoa Nova)">
                     {teams.map(t => (
-                      <option key={t.id} value={t.name}>{t.name} (Digitar Nome)</option>
+                      <option key={t.id} value={t.name}>📝 Pagar Depois - Conta {t.name}</option>
                     ))}
                   </optgroup>
                 </select>
@@ -540,7 +571,7 @@ function App() {
 
       {activeTab === 'reports' && (
         <div className="reports-container">
-          <h2>Relatórios e Fiados</h2>
+          <h2>Relatórios e Pagar Depois</h2>
           
           <div className="search-bar">
             <input 
@@ -563,7 +594,7 @@ function App() {
                     <span className="t-date">{new Date(t.date).toLocaleString()}</span>
                   </div>
                   <div className="t-buyer">
-                    <strong>Comprador:</strong> {t.buyerName || 'N/A'} {t.buyerPhone ? `(${t.buyerPhone})` : ''}
+                    <strong>Comprador:</strong> {(t.buyerName || t.buyername) || 'N/A'} {(t.buyerPhone || t.buyerphone) ? `(${(t.buyerPhone || t.buyerphone)})` : ''}
                   </div>
                   <div className="t-items">
                     {t.cart.map((item, idx) => (
@@ -576,7 +607,7 @@ function App() {
                   <div className="t-total">
                     <strong>Total: R$ {t.total.toFixed(2).replace('.', ',')}</strong>
                   </div>
-                  {t.buyerPhone && (
+                  {(t.buyerPhone || t.buyerphone) && (
                     <button 
                       className="whatsapp-btn"
                       onClick={() => sendWhatsApp(t)}
