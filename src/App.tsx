@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 
 // Tipos
-type Product = { id: number, name: string, price: number, stock: number, imageUrl?: string };
+type Product = { id: number, name: string, price: number, stock: number, imageUrl?: string, imageurl?: string };
 type Customer = { id: number, name: string, phone: string, team: string };
 type CartItem = Product & { quantity: number };
 type Team = { id: number, name: string, balance: number };
@@ -409,7 +409,7 @@ function App() {
                 products.map(product => (
                   <div key={product.id} className="product-card">
                     <div className="product-image">
-                      {product.imageUrl ? <img src={product.imageUrl} alt={product.name} style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px'}} /> : '📦'}
+                      {(product.imageUrl || product.imageurl) ? <img src={product.imageUrl || product.imageurl} alt={product.name} style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px'}} /> : '📦'}
                     </div>
                     <h3>{product.name}</h3>
                     <p className="price">R$ {product.price.toFixed(2).replace('.', ',')}</p>
